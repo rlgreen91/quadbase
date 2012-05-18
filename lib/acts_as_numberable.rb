@@ -119,8 +119,8 @@ module ActsAsNumberable
       later_items = self.class.where{container_column == my{self.send(container_column)}}
                               .where{number > my{self.number}}
 
-      # logger.debug("later_items:" + later_items.inspect)
-      # logger.debug("is destroyed?: " + self.destroyed.inspect)
+      # logger.debug {"later_items:" + later_items.inspect}
+      # logger.debug {"is destroyed?: " + self.destroyed.inspect}
 
       if !self.destroyed
         self.number = nil
