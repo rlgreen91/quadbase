@@ -9,41 +9,30 @@
     </span>
     <% # Couldn't get the buttons to be checked on load without manually %>
     <% # checking the status %>
-    <% credit = f.object.credit %>
-    <% id = f.object.id %>
+    <% credit = f.object.credit || 0 %>
+    <% @id = (@id ||= 0) + 1 %>
     <div class = "marked">
-    	<%= f.radio_button :credit, '1', {:checked => credit == 1, :onclick => "$(tft#{id}).hide();"} %>
-    	Right
-    	<%= f.radio_button :credit, '0', {:checked => credit == 0, :onclick => "$(tft#{id}).hide();"} %>
-	Wrong
-	<%= f.radio_button :credit, 0.5, {:id => "frb" + "#{id}", :checked => (credit != 1 && credit != 0), :onclick => "$(tft#{id}).show();"}%>
-	Partial Credit:
-       	<%= f.text_field :value, :id => 'tft' + "#{id}", :value => credit, :class => 'part_cred_field', :style => "#{credit != 1 && credit != 0 ? '' : 'display:none'}", :onblur => "$(frb#{id}).attr('value', this.value);"%>
-	<% temp = '' %>
-	<%= request.POST.each do |k,v| %>
-	<% if k == "question" %>
-	<% v.each do |k2, v2| %>
-		<% if k2 == "answer_choices_attributes" %>
-			<% v2.each do |k3, v3|  %>
-				<% v3.each do |k4, v4| %>
-					<% if k4 == "credit" %>
-						<% temp = v4 %>
-					<% end %>
-				<% end %>
-				<script type="text/javascript">
-					<% if temp != '0' && temp != '1' %>
-					document.getElementsByName("question[answer_choices_attributes][<%= k3 %>][value]")[0].value = '<%= temp %>';
-					document.getElementsByName("question[answer_choices_attributes][<%= k3 %>][value]")[0].style.display = 'inline';
-					document.getElementsByName("question[answer_choices_attributes][<%= k3 %>][credit]")[2].value = '<%= temp %>';
-					document.getElementsByName("question[answer_choices_attributes][<%= k3 %>][credit]")[2].checked = 'true';
-					<% end %>
-				</script>
-			<% end %> 
-		<% end %>
-	<% end %>
-	<% end %>
-	<% end %>
-    </div>    
+      <%= f.radio_button :credit, '1', {:checked => credit == 1,
+        :onclick => "$('#text_field_tid#{@id}').hide();"} %>
+      Right
+      <%= f.radio_button :credit, '0', {:checked => credit == 0, 
+        :onclick => "$('#text_field_tid#{@id}').hide();"} %>
+      Wrong
+      <%= f.radio_button :credit, credit, 
+        {:id => "radio_button_rid#{@id}", :checked => 
+        (credit != 1 && credit != 0), 
+        :onclick => "$('#text_field_tid#{@id}').show();"}%>
+      Partial Credit:
+      <%= text_field_tag '', '', :id => 'text_field_tid' + "#{@id}", 
+        :value => credit, :class => 'part_cred_field', 
+        :style => "#{credit != 1 && 
+        credit != 0 ? '' :   'display:none'}", 
+        :onkeyup => "$('#radio_button_rid#{@id}').attr('value', this.value);"%>
+      <%# hidden field that updates the time for the update_attributes in
+        question_helper so that the save forces a save even if no
+        other attributes seem to be updated #%>
+      <%= f.hidden_field :updated_at, :value => Time.now %>
+    </div>
   </div>
 <% end %>
 
