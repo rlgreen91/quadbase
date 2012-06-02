@@ -12,7 +12,7 @@ class QuestionsController < ApplicationController
   before_filter {select_tab(:write)}
   before_filter :except => [:index, :new, :get_started, :search] do @use_columns = true end
 
-  before_filter {@include_autocomplete=true}
+  # before_filter {@include_autocomplete=true}
     
   autocomplete :tag, :name, :class_name => 'ActsAsTaggableOn::Tag'
   
@@ -22,6 +22,7 @@ class QuestionsController < ApplicationController
 
   def show
     @question = Question.from_param(params[:id])
+    @unfinished_solutions = !@question.solutions.where{(is_visible == false) & (creator_id == my{present_user.id})}.first.nil?
     raise SecurityTransgression unless present_user.can_read?(@question)
     
     start_time = Time.now if logger.info?
@@ -97,7 +98,7 @@ class QuestionsController < ApplicationController
        if (@updated = @question.update_attributes(params[:question]))
         flash[:notice] = "Your draft has been saved.
                           Until you publish this draft, please remember that only members of " +
-                          @question.project_questions.first.project.name +
+                          @question.project.name +
                           " will be able to see it."
         format.html { redirect_to question_path(@question) }
        else
@@ -282,7 +283,7 @@ class QuestionsController < ApplicationController
         format.html { redirect_to edit_question_path(@question) }
       end
     rescue ActiveRecord::RecordInvalid => invalid
-      logger.error("An error occurred when deriving a question: #{invalid.message}")
+      logger.error {"An error occurred when deriving a question: #{invalid.message}"}
       flash[:alert] = "We could not create a derived question as requested."
       respond_to do |format|
         format.html { redirect_to question_path(@source_question) }
@@ -323,7 +324,7 @@ class QuestionsController < ApplicationController
       end
 
     rescue ActiveRecord::RecordInvalid => invalid
-      logger.error("An error occurred when deriving a question: #{invalid.message}")
+      logger.error {"An error occurred when deriving a question: #{invalid.message}"}
       flash[:alert] = "We could not create a derived question as requested."
       respond_to do |format|
         format.html { redirect_to question_path(@source_question) }
@@ -360,8 +361,20 @@ class QuestionsController < ApplicationController
   end
 
   def search
-    @q = Question.search(params[:q])
-    @questions = @q.result(:distinct => true).paginate(:page => params[:page], :per_page => params[:per_page])
+    @type = params[:type]
+    @location = params[:location]
+    @part = params[:part]
+    @query = params[:query]
+    @exclude_type = params[:exclude_type]
+    @per_page = params[:per_page]
+    @questions = Question.search(@type, @location, @part,
+                                 @query, present_user, @exclude_type)
+    respond_to do |format|
+      format.html do
+        @questions = @questions.paginate(:page => params[:page], :per_page => @per_page)
+      end
+      format.js
+    end
   end
   
 protected
@@ -377,7 +390,7 @@ protected
         format.html { redirect_to edit_question_path(@question) }
       end
     rescue ActiveRecord::RecordInvalid => invalid
-      logger.error("An error occurred when creating a question: #{invalid.message}")
+      logger.error {"An error occurred when creating a question: #{invalid.message}"}
     
       respond_to do |format|
         format.html {   
