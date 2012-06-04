@@ -7,3 +7,6 @@ $("#quickview_dialog").html("<%= escape_javascript(render :partial => 'show',
 
 $("#quickview_dialog").dialog('open');
 
+$('.ui-widget-overlay').live("click",function(){
+            $("#quickview_dialog").dialog("close");
+        });    
